@@ -1,0 +1,232 @@
+{% extends 'base.html' %}
+
+{% block title %}Tableau de Bord - Administrateur{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1 class="h3 mb-0">
+        <i class="fas fa-user-shield me-2"></i>Tableau de Bord - Administrateur
+    </h1>
+    
+    <div class="btn-group">
+        <a href="{% url 'liste_utilisateurs' %}" class="btn btn-outline-primary">
+            <i class="fas fa-users me-1"></i> Gérer les utilisateurs
+        </a>
+        <a href="{% url 'admin:index' %}" class="btn btn-outline-dark">
+            <i class="fas fa-cog me-1"></i> Administration Django
+        </a>
+    </div>
+</div>
+
+<!-- Statistiques Admin -->
+<div class="row mb-4">
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card border-primary">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h6 class="text-muted">Utilisateurs</h6>
+                        <h3 class="card-title">{{ total_utilisateurs }}</h3>
+                    </div>
+                    <div class="align-self-center">
+                        <i class="fas fa-users fa-2x text-primary"></i>
+                    </div>
+                </div>
+                <p class="card-text small text-muted">
+                    <i class="fas fa-info-circle me-1"></i>
+                    {{ utilisateurs_actifs }} actif(s)
+                </p>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card border-success">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h6 class="text-muted">Articles actifs</h6>
+                        <h3 class="card-title">{{ total_articles }}</h3>
+                    </div>
+                    <div class="align-self-center">
+                        <i class="fas fa-box-open fa-2x text-success"></i>
+                    </div>
+                </div>
+                <p class="card-text small text-muted">
+                    <i class="fas fa-info-circle me-1"></i>
+                    {{ valeur_totale|floatformat:2 }} GNF de valeur
+                </p>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card border-warning">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h6 class="text-muted">Alertes système</h6>
+                        <h3 class="card-title">{{ alertes_systeme }}</h3>
+                    </div>
+                    <div class="align-self-center">
+                        <i class="fas fa-exclamation-triangle fa-2x text-warning"></i>
+                    </div>
+                </div>
+                <p class="card-text small text-muted">
+                    <i class="fas fa-info-circle me-1"></i>
+                    Non consultées
+                </p>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card border-info">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h6 class="text-muted">Mouvements 24h</h6>
+                        <h3 class="card-title">{{ mouvements_24h|default:"0" }}</h3>
+                    </div>
+                    <div class="align-self-center">
+                        <i class="fas fa-exchange-alt fa-2x text-info"></i>
+                    </div>
+                </div>
+                <p class="card-text small text-muted">
+                    <i class="fas fa-info-circle me-1"></i>
+                    Activité récente
+                </p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Actions Admin Rapides -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header bg-light">
+                <h5 class="mb-0"><i class="fas fa-bolt me-2"></i>Actions Administratives Rapides</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-3 mb-3">
+                        <a href="{% url 'ajouter_utilisateur' %}" class="btn btn-primary w-100">
+                            <i class="fas fa-user-plus me-2"></i>Nouvel Utilisateur
+                        </a>
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <a href="{% url 'import_articles' %}" class="btn btn-success w-100">
+                            <i class="fas fa-file-import me-2"></i>Importer Catalogue
+                        </a>
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <a href="{% url 'admin:index' %}" class="btn btn-warning w-100">
+                            <i class="fas fa-cog me-2"></i>Panel Admin
+                        </a>
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <a href="{% url 'generer_etat_stock_pdf' %}" class="btn btn-info w-100">
+                            <i class="fas fa-file-pdf me-2"></i>Exporter Rapport
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Derniers utilisateurs connectés -->
+<div class="row">
+    <div class="col-lg-6 mb-4">
+        <div class="card h-100">
+            <div class="card-header bg-light">
+                <h5 class="mb-0"><i class="fas fa-history me-2"></i>Dernières Connexions</h5>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Utilisateur</th>
+                                <th>Rôle</th>
+                                <th>Dernière connexion</th>
+                                <th>Statut</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for user in derniers_connectes %}
+                            <tr>
+                                <td>{{ user.profilutilisateur.nom_complet }}</td>
+                                <td>
+                                    {% if user.profilutilisateur.role == 'admin' %}
+                                    <span class="badge bg-danger">Admin</span>
+                                    {% elif user.profilutilisateur.role == 'gestionnaire' %}
+                                    <span class="badge bg-warning">Gestionnaire</span>
+                                    {% else %}
+                                    <span class="badge bg-success">Vendeur</span>
+                                    {% endif %}
+                                </td>
+                                <td>{{ user.last_login|date:"d/m/Y H:i"|default:"Jamais" }}</td>
+                                <td>
+                                    {% if user.is_active %}
+                                    <span class="badge bg-success">Actif</span>
+                                    {% else %}
+                                    <span class="badge bg-secondary">Inactif</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Alertes système -->
+    <div class="col-lg-6 mb-4">
+        <div class="card h-100">
+            <div class="card-header bg-light">
+                <h5 class="mb-0"><i class="fas fa-exclamation-triangle me-2 text-danger"></i>Alertes Système</h5>
+            </div>
+            <div class="card-body">
+                {% if alertes_systeme > 0 %}
+                <div class="alert alert-danger">
+                    <i class="fas fa-server me-2"></i>
+                    <strong>Alertes système non traitées</strong>
+                    <p class="mb-0 mt-2">Il y a {{ alertes_systeme }} alerte(s) système nécessitant votre attention.</p>
+                </div>
+                {% else %}
+                <div class="text-center py-4">
+                    <i class="fas fa-check-circle fa-3x text-success mb-3"></i>
+                    <h5 class="text-muted">Aucune alerte système</h5>
+                    <p class="text-muted small">Tous les systèmes fonctionnent normalement.</p>
+                </div>
+                {% endif %}
+                
+                <div class="mt-4">
+                    <h6 class="mb-3">Statistiques système</h6>
+                    <div class="list-group list-group-flush">
+                        <div class="list-group-item d-flex justify-content-between">
+                            <span>Base de données</span>
+                            <span class="badge bg-success">OK</span>
+                        </div>
+                        <div class="list-group-item d-flex justify-content-between">
+                            <span>Sauvegarde automatique</span>
+                            <span class="badge bg-success">Actif</span>
+                        </div>
+                        <div class="list-group-item d-flex justify-content-between">
+                            <span>Performance système</span>
+                            <span class="badge bg-info">Optimal</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Inclure le dashboard normal -->
+{% include 'gestion_stock/dashboard.html' %}
+{% endblock %}

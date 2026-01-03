@@ -1,0 +1,92 @@
+{% extends 'base.html' %}
+{% load crispy_forms_tags %}
+
+{% block title %}Connexion - Gestion de Stock{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-6 col-lg-5">
+        <div class="card shadow-lg border-0">
+            <div class="card-header bg-primary text-white text-center py-4">
+                <h3 class="mb-0">
+                    <i class="fas fa-boxes me-2"></i>StockMaster Pro
+                </h3>
+                <p class="mb-0 mt-2">Système de Gestion de Stock</p>
+            </div>
+            
+            <div class="card-body p-5">
+                <h4 class="text-center mb-4">Connexion</h4>
+                
+                <form method="post">
+                    {% csrf_token %}
+                    
+                    <div class="mb-3">
+                        <label for="id_username" class="form-label">
+                            <i class="fas fa-user me-1"></i> Nom d'utilisateur
+                        </label>
+                        <input type="text" name="username" class="form-control" id="id_username" 
+                               placeholder="Nom d'utilisateur" required>
+                    </div>
+                    
+                    <div class="mb-4">
+                        <label for="id_password" class="form-label">
+                            <i class="fas fa-lock me-1"></i> Mot de passe
+                        </label>
+                        <input type="password" name="password" class="form-control" id="id_password" 
+                               placeholder="Mot de passe" required>
+                    </div>
+                    
+                    <div class="d-grid mb-3">
+                        <button type="submit" class="btn btn-primary btn-lg">
+                            <i class="fas fa-sign-in-alt me-2"></i> Se connecter
+                        </button>
+                    </div>
+                    
+                    {% if form.errors %}
+                    <div class="alert alert-danger">
+                        <i class="fas fa-exclamation-circle me-2"></i>
+                        Nom d'utilisateur ou mot de passe incorrect.
+                    </div>
+                    {% endif %}
+                    
+                    <div class="text-center mt-4">
+                        <p class="text-muted small">
+                            <i class="fas fa-info-circle me-1"></i>
+                            Contactez l'administrateur pour créer un compte
+                        </p>
+                    </div>
+                </form>
+            </div>
+            
+            <div class="card-footer text-center py-3">
+                <p class="mb-0 text-muted small">
+                    © 2024 StockMaster Pro. Tous droits réservés.
+                </p>
+            </div>
+        </div>
+        
+        <!-- Info sur les rôles -->
+        <div class="card mt-4 border-0 bg-light">
+            <div class="card-body">
+                <h6 class="card-title mb-3">
+                    <i class="fas fa-users me-2"></i>Rôles disponibles :
+                </h6>
+                <div class="row">
+                    <div class="col-md-4 mb-2">
+                        <span class="badge bg-danger p-2 w-100">Administrateur</span>
+                        <small class="d-block mt-1">Gestion complète</small>
+                    </div>
+                    <div class="col-md-4 mb-2">
+                        <span class="badge bg-warning p-2 w-100">Gestionnaire</span>
+                        <small class="d-block mt-1">Gestion stock + commandes</small>
+                    </div>
+                    <div class="col-md-4 mb-2">
+                        <span class="badge bg-success p-2 w-100">Vendeur</span>
+                        <small class="d-block mt-1">Consultation + sorties</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

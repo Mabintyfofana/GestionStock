@@ -1,0 +1,197 @@
+{% extends 'base.html' %}
+{% load crispy_forms_tags %}
+
+{% block title %}Mouvement de Stock{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        <div class="card shadow">
+            <div class="card-header {% if request.GET.type == 'entree' %}bg-success{% else %}bg-warning{% endif %} text-white py-3">
+                <div class="d-flex justify-content-between align-items-center">
+                    <h4 class="mb-0">
+                        {% if request.GET.type == 'entree' %}
+                        <i class="fas fa-sign-in-alt me-2"></i>Entrée de Stock
+                        {% elif request.GET.type == 'sortie' %}
+                        <i class="fas fa-sign-out-alt me-2"></i>Sortie de Stock
+                        {% else %}
+                        <i class="fas fa-exchange-alt me-2"></i>Mouvement de Stock
+                        {% endif %}
+                    </h4>
+                    <a href="{% url 'historique_mouvements' %}" class="btn btn-light btn-sm">
+                        <i class="fas fa-history me-1"></i> Historique
+                    </a>
+                </div>
+            </div>
+            
+            <div class="card-body p-4">
+                <form method="post">
+                    {% csrf_token %}
+                    
+                    <div class="row mb-4">
+                        <div class="col-md-6">
+                            {{ form.type_mouvement|as_crispy_field }}
+                        </div>
+                        <div class="col-md-6">
+                            {{ form.article|as_crispy_field }}
+                        </div>
+                    </div>
+                    
+                    <div class="row mb-4">
+                        <div class="col-md-6">
+                            {{ form.quantite|as_crispy_field }}
+                        </div>
+                        <div class="col-md-6">
+                            {{ form.reference|as_crispy_field }}
+                        </div>
+                    </div>
+                    
+                    <div class="mb-4">
+                        {{ form.motif|as_crispy_field }}
+                    </div>
+                    
+                    <!-- Info stock actuel -->
+                    <div class="alert alert-info">
+                        <div class="row">
+                            <div class="col-md-4">
+                                <strong>Stock actuel:</strong>
+                                <span id="stock-actuel" class="ms-2">--</span>
+                            </div>
+                            <div class="col-md-4">
+                                <strong>Prix d'achat:</strong>
+                                <span id="prix-achat" class="ms-2">--</span> GNF
+                            </div>
+                            <div class="col-md-4">
+                                <strong>Prix de vente:</strong>
+                                <span id="prix-vente" class="ms-2">--</span> GNF
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                        <a href="{% url 'liste_articles' %}" class="btn btn-secondary me-md-2">
+                            <i class="fas fa-times me-1"></i> Annuler
+                        </a>
+                        <button type="submit" class="btn {% if request.GET.type == 'entree' %}btn-success{% else %}btn-warning{% endif %}">
+                            <i class="fas fa-check me-1"></i>
+                            {% if request.GET.type == 'entree' %}
+                            Enregistrer l'entrée
+                            {% elif request.GET.type == 'sortie' %}
+                            Enregistrer la sortie
+                            {% else %}
+                            Enregistrer le mouvement
+                            {% endif %}
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+        
+        <!-- Scanner code-barres -->
+        <div class="card shadow mt-4">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0">
+                    <i class="fas fa-barcode me-2"></i>Scanner code-barres
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="input-group">
+                    <input type="text" id="scan-code-barres" class="form-control" 
+                           placeholder="Scanner un code-barres ou saisir manuellement">
+                    <button class="btn btn-outline-primary" type="button" id="btn-scan">
+                        <i class="fas fa-camera"></i> Scanner
+                    </button>
+                </div>
+                <div class="mt-2 text-muted small">
+                    <i class="fas fa-info-circle me-1"></i>
+                    Placez le curseur dans le champ et scannez un code-barres
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+$(document).ready(function() {
+    // Pré-remplir le type de mouvement depuis l'URL
+    var urlType = new URLSearchParams(window.location.search).get('type');
+    if (urlType) {
+        $('#id_type_mouvement').val(urlType);
+    }
+    
+    // Pré-remplir l'article depuis l'URL
+    var urlArticle = new URLSearchParams(window.location.search).get('article');
+    if (urlArticle) {
+        $('#id_article').val(urlArticle);
+        updateArticleInfo(urlArticle);
+    }
+    
+    // Mettre à jour les infos quand l'article change
+    $('#id_article').change(function() {
+        updateArticleInfo($(this).val());
+    });
+    
+    // Scanner code-barres
+    $('#scan-code-barres').on('input', function() {
+        var codeBarre = $(this).val();
+        if (codeBarre.length >= 8) { // Code-barres minimum 8 caractères
+            rechercheCodeBarre(codeBarre);
+        }
+    });
+    
+    // Rechercher article par code-barres
+    function rechercheCodeBarre(codeBarre) {
+        $.ajax({
+            url: '{% url "api_recherche_article" "0000000000000" %}'.replace('0000000000000', codeBarre),
+            method: 'GET',
+            success: function(data) {
+                if (data.code_article) {
+                    // Trouver l'option correspondante dans le select
+                    $('#id_article option').each(function() {
+                        if ($(this).text().includes(data.code_article)) {
+                            $('#id_article').val($(this).val());
+                            updateArticleInfo($(this).val());
+                            $('#scan-code-barres').val('');
+                            return false;
+                        }
+                    });
+                }
+            },
+            error: function() {
+                console.log('Article non trouvé');
+            }
+        });
+    }
+    
+    // Mettre à jour les informations de l'article
+    function updateArticleInfo(articleId) {
+        if (!articleId) return;
+        
+        $.ajax({
+            url: '{% url "api_stock_actuel" %}?article=' + articleId,
+            method: 'GET',
+            success: function(data) {
+                $('#stock-actuel').text(data.quantite);
+                $('#prix-achat').text(data.prix_achat);
+                $('#prix-vente').text(data.prix_vente);
+                
+                // Mettre en rouge si stock faible
+                if (data.quantite <= data.seuil_alerte) {
+                    $('#stock-actuel').addClass('text-danger fw-bold');
+                } else {
+                    $('#stock-actuel').removeClass('text-danger fw-bold');
+                }
+            }
+        });
+    }
+    
+    // Initialiser les infos si un article est déjà sélectionné
+    var selectedArticle = $('#id_article').val();
+    if (selectedArticle) {
+        updateArticleInfo(selectedArticle);
+    }
+});
+</script>
+{% endblock %}

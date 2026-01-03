@@ -1,0 +1,14 @@
+# Créer requirements.txt
+pip install django
+pip install django-bootstrap5
+pip install django-crispy-forms
+pip install crispy-bootstrap5
+pip install pillow
+pip install python-dotenv
+pip install reportlab
+pip install django-qr-code
+pip install django-import-export
+pip install django-barcode
+
+# Geler les dépendances
+pip freeze > requirements.txt

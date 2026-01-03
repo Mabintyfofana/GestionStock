@@ -1,0 +1,218 @@
+{% extends 'base.html' %}
+
+{% block title %}Alertes{% endblock %}
+{% load custom_filters %}
+
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="h3 mb-0">
+            <i class="fas fa-exclamation-triangle me-2 text-warning"></i>Alertes
+        </h1>
+        
+        <div class="btn-group">
+            <a href="{% url 'dashboard' %}" class="btn btn-outline-secondary">
+                <i class="fas fa-arrow-left me-1"></i> Retour
+            </a>
+        </div>
+    </div>
+
+    <!-- Alertes de rupture -->
+    {% if alertes_rupture %}
+    <div class="card border-danger mb-4">
+        <div class="card-header bg-danger text-white">
+            <h5 class="mb-0">
+                <i class="fas fa-times-circle me-2"></i>Ruptures de Stock
+                <span class="badge bg-light text-danger ms-2">{{ alertes_rupture.count }}</span>
+            </h5>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>Article</th>
+                            <th>Code</th>
+                            <th>Dernière entrée</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for article in alertes_rupture %}
+                        <tr>
+                           <td>
+        <strong>{{ article.designation }}</strong>
+        <br>
+        <small class="text-muted">{{ article.categorie.nom|default:"Non catégorisé" }}</small>
+    </td>
+    <td>{{ article.code_article }}</td>
+    <td>
+        {% with stock=article.stock_set.first %}
+            {% if stock and stock.date_derniere_entree %}
+            {{ stock.date_derniere_entree|date:"d/m/Y" }}
+            {% else %}
+            <span class="text-muted">Jamais</span>
+            {% endif %}
+        {% endwith %}
+    </td>
+                            <td>
+                                <div class="btn-group btn-group-sm">
+                                    <a href="{% url 'detail_article' article.pk %}" class="btn btn-outline-info">
+                                        <i class="fas fa-eye"></i>
+                                    </a>
+                                    {% if user.profilutilisateur.role in 'admin,gestionnaire' %}
+                                    <a href="{% url 'mouvement_stock' %}?article={{ article.pk }}&type=entree" 
+                                       class="btn btn-outline-success">
+                                        <i class="fas fa-plus"></i> Réapprovisionner
+                                    </a>
+                                    {% endif %}
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Alertes de stock faible -->
+    {% if alertes_stock %}
+    <div class="card border-warning mb-4">
+        <div class="card-header bg-warning text-dark">
+            <h5 class="mb-0">
+                <i class="fas fa-exclamation-circle me-2"></i>Stocks Faibles
+                <span class="badge bg-light text-warning ms-2">{{ alertes_stock.count }}</span>
+            </h5>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>Article</th>
+                            <th>Stock actuel</th>
+                            <th>Seuil d'alerte</th>
+                            <th>Écart</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for article in alertes_stock %}
+                        <tr>
+                            <td>
+                                <strong>{{ article.designation }}</strong>
+                                <br>
+                                <small class="text-muted">{{ article.code_article }}</small>
+                            </td>
+                            <td>
+                                <span class="badge bg-warning">{{ article.quantite_stock }}</span>
+                            </td>
+                            <td>
+                                <span class="badge bg-secondary">{{ article.seuil_alerte }}</span>
+                            </td>
+                            <td>
+                                <!-- <span class="badge bg-danger">
+                                    -{{ article.seuil_alerte|add:article.quantite_stock|abs }} unités
+                                </span> -->
+                                  <span class="badge bg-danger">-{{ article.seuil_alerte|add:article.quantite_stock|abs }} unités</span>
+
+                            </td>
+                            <td>
+                                <div class="btn-group btn-group-sm">
+                                    <a href="{% url 'detail_article' article.pk %}" class="btn btn-outline-info">
+                                        <i class="fas fa-eye"></i>
+                                    </a>
+                                    {% if user.profilutilisateur.role in 'admin,gestionnaire' %}
+                                    <a href="{% url 'mouvement_stock' %}?article={{ article.pk }}&type=entree" 
+                                       class="btn btn-outline-success">
+                                        <i class="fas fa-plus"></i>
+                                    </a>
+                                    {% endif %}
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Alertes de péremption -->
+    {% if alertes_peremption %}
+    <div class="card border-info mb-4">
+        <div class="card-header bg-info text-white">
+            <h5 class="mb-0">
+                <i class="fas fa-clock me-2"></i>Péremptions Proches
+                <span class="badge bg-light text-info ms-2">{{ alertes_peremption.count }}</span>
+            </h5>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>Article</th>
+                            <th>Date péremption</th>
+                            <th>Jours restants</th>
+                            <th>Stock</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for article in alertes_peremption %}
+                        <tr>
+                            <td>
+                                <strong>{{ article.designation }}</strong>
+                                <br>
+                                <small class="text-muted">{{ article.code_article }}</small>
+                            </td>
+                            <td>{{ article.date_peremption|date:"d/m/Y" }}</td>
+                            <td>
+                                <span class="badge 
+                                    {% if article.date_peremption|timeuntil:now < 7 %}bg-danger
+                                    {% elif article.date_peremption|timeuntil:now < 30 %}bg-warning
+                                    {% else %}bg-info{% endif %}">
+                                    {{ article.date_peremption|timeuntil:now }} jours
+                                </span>
+                            </td>
+                            <td>
+                                <span class="badge bg-secondary">{{ article.quantite_stock }}</span>
+                            </td>
+                            <td>
+                                <div class="btn-group btn-group-sm">
+                                    <a href="{% url 'detail_article' article.pk %}" class="btn btn-outline-info">
+                                        <i class="fas fa-eye"></i>
+                                    </a>
+                                    <a href="{% url 'mouvement_stock' %}?article={{ article.pk }}&type=sortie" 
+                                       class="btn btn-outline-warning">
+                                        <i class="fas fa-fire"></i> Liquider
+                                    </a>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Si aucune alerte -->
+    {% if not alertes_rupture and not alertes_stock and not alertes_peremption %}
+    <div class="text-center py-5">
+        <i class="fas fa-check-circle fa-4x text-success mb-3"></i>
+        <h3 class="text-muted">Aucune alerte en cours</h3>
+        <p class="text-muted">Tous les stocks sont à niveau et aucune péremption n'est imminente.</p>
+        <a href="{% url 'dashboard' %}" class="btn btn-primary">
+            <i class="fas fa-arrow-left me-2"></i> Retour au tableau de bord
+        </a>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

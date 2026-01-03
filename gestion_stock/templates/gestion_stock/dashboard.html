@@ -1,0 +1,335 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Tableau de Bord{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1 class="h3 mb-0"><i class="fas fa-tachometer-alt me-2"></i>Tableau de Bord</h1>
+    <div class="btn-group">
+        <a href="{% url 'generer_etat_stock_pdf' %}" class="btn btn-outline-primary">
+            <i class="fas fa-file-pdf me-1"></i> Exporter PDF
+        </a>
+        <button type="button" class="btn btn-outline-secondary" onclick="window.print()">
+            <i class="fas fa-print me-1"></i> Imprimer
+        </button>
+    </div>
+</div>
+
+<!-- Statistiques -->
+<div class="row mb-4">
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card stat-card h-100">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h5 class="card-title text-muted">Articles</h5>
+                        <h2 class="card-text">{{ total_articles }}</h2>
+                    </div>
+                    <div class="align-self-center">
+                        <i class="fas fa-boxes fa-2x text-primary"></i>
+                    </div>
+                </div>
+                <p class="card-text small text-muted mb-0">
+                    <i class="fas fa-info-circle me-1"></i>
+                    Total des articles enregistrés
+                </p>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card stat-card h-100">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h5 class="card-title text-muted">Stock Total</h5>
+                        <h2 class="card-text">{{ total_stock }}</h2>
+                    </div>
+                    <div class="align-self-center">
+                        <i class="fas fa-warehouse fa-2x text-success"></i>
+                    </div>
+                </div>
+                <p class="card-text small text-muted mb-0">
+                    <i class="fas fa-info-circle me-1"></i>
+                    Quantité totale en stock
+                </p>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card stat-card h-100">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h5 class="card-title text-muted">Valeur Stock</h5>
+                        <h2 class="card-text">{{ valeur_totale|floatformat:2 }} GNF</h2>
+                    </div>
+                    <div class="align-self-center">
+                        <i class="fas fa-euro-sign fa-2x text-warning"></i>
+                    </div>
+                </div>
+                <p class="card-text small text-muted mb-0">
+                    <i class="fas fa-info-circle me-1"></i>
+                    Valeur totale au prix d'achat
+                </p>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card alert-card h-100">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h5 class="card-title text-muted">Alertes</h5>
+                        <h2 class="card-text text-danger">{{ alertes_stock|add:alertes_peremption }}</h2>
+                    </div>
+                    <div class="align-self-center">
+                        <i class="fas fa-exclamation-triangle fa-2x text-danger"></i>
+                    </div>
+                </div>
+                <p class="card-text small text-muted mb-0">
+                    <i class="fas fa-info-circle me-1"></i>
+                    {{ alertes_stock }} stock faible + {{ alertes_peremption }} péremption
+                </p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Actions Rapides -->
+{% if user.profilutilisateur.role in 'admin,gestionnaire' %}
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header bg-light">
+                <h5 class="mb-0"><i class="fas fa-bolt me-2"></i>Actions Rapides</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-3 mb-3">
+                        <a href="{% url 'ajouter_article' %}" class="btn btn-primary w-100">
+                            <i class="fas fa-plus-circle me-2"></i>Nouvel Article
+                        </a>
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <a href="{% url 'mouvement_stock' %}" class="btn btn-success w-100">
+                            <i class="fas fa-sign-in-alt me-2"></i>Entrée Stock
+                        </a>
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <a href="{% url 'mouvement_stock' %}" class="btn btn-warning w-100">
+                            <i class="fas fa-sign-out-alt me-2"></i>Sortie Stock
+                        </a>
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <a href="{% url 'ajuster_stock' %}" class="btn btn-info w-100">
+                            <i class="fas fa-adjust me-2"></i>Ajuster Stock
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- Derniers Mouvements et Alertes -->
+<div class="row">
+    <!-- Derniers Mouvements -->
+    <div class="col-lg-8 mb-4">
+        <div class="card h-100">
+            <div class="card-header bg-light d-flex justify-content-between align-items-center">
+                <h5 class="mb-0"><i class="fas fa-history me-2"></i>Derniers Mouvements</h5>
+                <a href="{% url 'historique_mouvements' %}" class="btn btn-sm btn-outline-primary">
+                    Voir tout <i class="fas fa-arrow-right ms-1"></i>
+                </a>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Date</th>
+                                <th>Type</th>
+                                <th>Article</th>
+                                <th>Quantité</th>
+                                <th>Utilisateur</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for mouvement in derniers_mouvements %}
+                            <tr>
+                                <td>{{ mouvement.date_mouvement|date:"d/m/Y H:i" }}</td>
+                                <td>
+                                    {% if mouvement.type_mouvement == 'entree' %}
+                                    <span class="badge bg-success">Entrée</span>
+                                    {% elif mouvement.type_mouvement == 'sortie' %}
+                                    <span class="badge bg-warning">Sortie</span>
+                                    {% else %}
+                                    <span class="badge bg-info">{{ mouvement.get_type_mouvement_display }}</span>
+                                    {% endif %}
+                                </td>
+                                <td>{{ mouvement.article.designation|truncatechars:30 }}</td>
+                                <td>{{ mouvement.quantite }}</td>
+                                <td>{{ mouvement.utilisateur.profilutilisateur.nom_complet }}</td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="5" class="text-center text-muted py-3">
+                                    Aucun mouvement récent
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Alertes et Ruptures -->
+    <div class="col-lg-4 mb-4">
+        <div class="card h-100">
+            <div class="card-header bg-light">
+                <h5 class="mb-0"><i class="fas fa-exclamation-triangle me-2 text-danger"></i>Alertes en Cours</h5>
+            </div>
+            <div class="card-body">
+                {% if articles_rupture %}
+                <div class="alert alert-danger">
+                    <h6 class="alert-heading"><i class="fas fa-times-circle me-1"></i> Ruptures de Stock</h6>
+                    <ul class="mb-0">
+                        {% for article in articles_rupture %}
+                        <li>{{ article.designation|truncatechars:30 }}</li>
+                        {% endfor %}
+                    </ul>
+                </div>
+                {% endif %}
+                
+                {% if alertes_stock > 0 %}
+                <div class="alert alert-warning">
+                    <h6 class="alert-heading"><i class="fas fa-exclamation me-1"></i> Stocks Faibles</h6>
+                    <p class="mb-0">{{ alertes_stock }} article(s) sous le seuil d'alerte</p>
+                </div>
+                {% endif %}
+                
+                {% if alertes_peremption > 0 %}
+                <div class="alert alert-info">
+                    <h6 class="alert-heading"><i class="fas fa-clock me-1"></i> Péremption Proche</h6>
+                    <p class="mb-0">{{ alertes_peremption }} article(s) approchent de la date de péremption</p>
+                </div>
+                {% endif %}
+                
+                {% if not articles_rupture and alertes_stock == 0 and alertes_peremption == 0 %}
+                <div class="text-center text-muted py-4">
+                    <i class="fas fa-check-circle fa-3x text-success mb-3"></i>
+                    <p class="mb-0">Aucune alerte en cours</p>
+                </div>
+                {% endif %}
+                
+                <a href="{% url 'alertes' %}" class="btn btn-outline-danger w-100 mt-3">
+                    <i class="fas fa-bell me-2"></i> Voir toutes les alertes
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Graphiques -->
+<div class="row mt-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header bg-light">
+                <h5 class="mb-0"><i class="fas fa-chart-line me-2"></i>Statistiques</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <canvas id="stockChart" height="250"></canvas>
+                    </div>
+                    <div class="col-md-6">
+                        <canvas id="movementChart" height="250"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Graphique des stocks par catégorie
+const stockCtx = document.getElementById('stockChart').getContext('2d');
+const stockChart = new Chart(stockCtx, {
+    type: 'doughnut',
+    data: {
+        labels: ['Électronique', 'Alimentaire', 'Bureau', 'Entretien', 'Autre'],
+        datasets: [{
+            data: [25, 35, 20, 15, 5],
+            backgroundColor: [
+                '#3498db',
+                '#2ecc71',
+                '#f39c12',
+                '#e74c3c',
+                '#9b59b6'
+            ],
+            borderWidth: 1
+        }]
+    },
+    options: {
+        responsive: true,
+        plugins: {
+            legend: {
+                position: 'bottom',
+            },
+            title: {
+                display: true,
+                text: 'Stocks par Catégorie'
+            }
+        }
+    }
+});
+
+// Graphique des mouvements
+const movementCtx = document.getElementById('movementChart').getContext('2d');
+const movementChart = new Chart(movementCtx, {
+    type: 'bar',
+    data: {
+        labels: ['Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam', 'Dim'],
+        datasets: [
+            {
+                label: 'Entrées',
+                data: [12, 19, 8, 15, 22, 3, 7],
+                backgroundColor: '#2ecc71'
+            },
+            {
+                label: 'Sorties',
+                data: [8, 15, 12, 10, 18, 5, 9],
+                backgroundColor: '#e74c3c'
+            }
+        ]
+    },
+    options: {
+        responsive: true,
+        scales: {
+            y: {
+                beginAtZero: true,
+                title: {
+                    display: true,
+                    text: 'Quantité'
+                }
+            }
+        },
+        plugins: {
+            title: {
+                display: true,
+                text: 'Mouvements Hebdomadaires'
+            }
+        }
+    }
+});
+</script>
+{% endblock %}

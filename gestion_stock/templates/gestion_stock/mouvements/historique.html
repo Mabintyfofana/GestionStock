@@ -1,0 +1,175 @@
+{% extends 'base.html' %}
+
+{% block title %}Historique des Mouvements{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="h3 mb-0">
+            <i class="fas fa-history me-2"></i>Historique des Mouvements
+        </h1>
+        
+        <div class="btn-group">
+            <a href="{% url 'mouvement_stock' %}" class="btn btn-primary">
+                <i class="fas fa-plus-circle me-1"></i> Nouveau mouvement
+            </a>
+            <a href="{% url 'dashboard' %}" class="btn btn-outline-secondary">
+                <i class="fas fa-arrow-left me-1"></i> Retour
+            </a>
+        </div>
+    </div>
+
+    <!-- Filtres -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <form method="get" class="row g-3">
+                <div class="col-md-3">
+                    <label class="form-label">Type</label>
+                    <select name="type" class="form-control">
+                        <option value="">Tous les types</option>
+                        <option value="entree" {% if request.GET.type == 'entree' %}selected{% endif %}>Entrées</option>
+                        <option value="sortie" {% if request.GET.type == 'sortie' %}selected{% endif %}>Sorties</option>
+                        <option value="ajustement" {% if request.GET.type == 'ajustement' %}selected{% endif %}>Ajustements</option>
+                    </select>
+                </div>
+                
+                <div class="col-md-3">
+                    <label class="form-label">Date début</label>
+                    <input type="date" name="date_debut" class="form-control" 
+                           value="{{ request.GET.date_debut }}">
+                </div>
+                
+                <div class="col-md-3">
+                    <label class="form-label">Date fin</label>
+                    <input type="date" name="date_fin" class="form-control" 
+                           value="{{ request.GET.date_fin }}">
+                </div>
+                
+                <div class="col-md-3">
+                    <label class="form-label">Article</label>
+                    <select name="article" class="form-control">
+                        <option value="">Tous les articles</option>
+                        {% for article in articles %}
+                        <option value="{{ article.id }}" 
+                                {% if request.GET.article == article.id|stringformat:"i" %}selected{% endif %}>
+                            {{ article.code_article }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                
+                <div class="col-12">
+                    <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                        <button type="submit" class="btn btn-primary me-md-2">
+                            <i class="fas fa-filter me-1"></i> Filtrer
+                        </button>
+                        <a href="{% url 'historique_mouvements' %}" class="btn btn-secondary">
+                            <i class="fas fa-redo me-1"></i> Réinitialiser
+                        </a>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Table des mouvements -->
+    <div class="card">
+        <div class="card-body">
+            {% if mouvements %}
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>Date</th>
+                            <th>Type</th>
+                            <th>Article</th>
+                            <th>Quantité</th>
+                            <th>Stock avant</th>
+                            <th>Stock après</th>
+                            <th>Utilisateur</th>
+                            <th>Motif</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for mouvement in mouvements %}
+                        <tr>
+                            <td>{{ mouvement.date_mouvement|date:"d/m/Y H:i" }}</td>
+                            <td>
+                                {% if mouvement.type_mouvement == 'entree' %}
+                                <span class="badge bg-success">Entrée</span>
+                                {% elif mouvement.type_mouvement == 'sortie' %}
+                                <span class="badge bg-warning">Sortie</span>
+                                {% else %}
+                                <span class="badge bg-info">{{ mouvement.type_mouvement }}</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {{ mouvement.article.designation|truncatechars:30 }}
+                                <br>
+                                <small class="text-muted">{{ mouvement.article.code_article }}</small>
+                            </td>
+                            <td>{{ mouvement.quantite }}</td>
+                            <td>{{ mouvement.quantite_avant }}</td>
+                            <td>{{ mouvement.quantite_apres }}</td>
+                            <td>
+                                {% if mouvement.utilisateur %}
+                                {{ mouvement.utilisateur.username }}
+                                {% else %}
+                                <span class="text-muted">Système</span>
+                                {% endif %}
+                            </td>
+                            <td>{{ mouvement.motif|truncatechars:30|default:"-" }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            
+            <!-- Pagination -->
+            {% if mouvements.has_other_pages %}
+            <nav aria-label="Page navigation" class="mt-4">
+                <ul class="pagination justify-content-center">
+                    {% if mouvements.has_previous %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ mouvements.previous_page_number }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">
+                            <i class="fas fa-chevron-left"></i>
+                        </a>
+                    </li>
+                    {% endif %}
+                    
+                    {% for num in mouvements.paginator.page_range %}
+                        {% if mouvements.number == num %}
+                        <li class="page-item active">
+                            <span class="page-link">{{ num }}</span>
+                        </li>
+                        {% elif num > mouvements.number|add:'-3' and num < mouvements.number|add:'3' %}
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ num }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">{{ num }}</a>
+                        </li>
+                        {% endif %}
+                    {% endfor %}
+                    
+                    {% if mouvements.has_next %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ mouvements.next_page_number }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">
+                            <i class="fas fa-chevron-right"></i>
+                        </a>
+                    </li>
+                    {% endif %}
+                </ul>
+            </nav>
+            {% endif %}
+            {% else %}
+            <div class="text-center py-5">
+                <i class="fas fa-history fa-3x text-muted mb-3"></i>
+                <h5 class="text-muted">Aucun mouvement trouvé</h5>
+                <p class="text-muted">Aucun mouvement n'a été enregistré pour le moment.</p>
+                <a href="{% url 'mouvement_stock' %}" class="btn btn-primary">
+                    <i class="fas fa-plus-circle me-1"></i> Créer un mouvement
+                </a>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

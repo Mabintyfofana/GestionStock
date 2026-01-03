@@ -1,0 +1,78 @@
+<!-- gestion_stock/templates/gestion_stock/profil/detail.html -->
+{% extends 'base.html' %}
+
+{% block title %}Mon Profil{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h4 class="mb-0">
+                        <i class="fas fa-user-circle me-2"></i>Mon Profil
+                    </h4>
+                </div>
+                
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-4 text-center">
+                            <div class="mb-4">
+                                <div class="rounded-circle bg-secondary d-inline-flex align-items-center justify-content-center" 
+                                     style="width: 120px; height: 120px;">
+                                    <i class="fas fa-user fa-3x text-light"></i>
+                                </div>
+                            </div>
+                            <h5>{{ user.profilutilisateur.nom_complet }}</h5>
+                            <span class="badge 
+                                {% if user.profilutilisateur.role == 'admin' %}bg-danger
+                                {% elif user.profilutilisateur.role == 'gestionnaire' %}bg-warning
+                                {% else %}bg-success{% endif %}">
+                                {{ user.profilutilisateur.get_role_display }}
+                            </span>
+                        </div>
+                        
+                        <div class="col-md-8">
+                            <table class="table table-borderless">
+                                <tr>
+                                    <th width="30%">Nom d'utilisateur:</th>
+                                    <td>{{ user.username }}</td>
+                                </tr>
+                                <tr>
+                                    <th>Email:</th>
+                                    <td>{{ user.email|default:"Non défini" }}</td>
+                                </tr>
+                                <tr>
+                                    <th>Nom complet:</th>
+                                    <td>{{ user.profilutilisateur.nom_complet }}</td>
+                                </tr>
+                                <tr>
+                                    <th>Téléphone:</th>
+                                    <td>{{ user.profilutilisateur.telephone|default:"Non défini" }}</td>
+                                </tr>
+                                <tr>
+                                    <th>Date d'inscription:</th>
+                                    <td>{{ user.date_joined|date:"d/m/Y" }}</td>
+                                </tr>
+                                <tr>
+                                    <th>Dernière connexion:</th>
+                                    <td>{{ user.last_login|date:"d/m/Y H:i"|default:"Jamais" }}</td>
+                                </tr>
+                            </table>
+                            
+                            <div class="d-grid gap-2 d-md-flex">
+                                <a href="{% url 'modifier_profil' %}" class="btn btn-warning me-md-2">
+                                    <i class="fas fa-edit me-2"></i> Modifier le profil
+                                </a>
+                                <a href="{% url 'dashboard' %}" class="btn btn-secondary">
+                                    <i class="fas fa-arrow-left me-2"></i> Retour au dashboard
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,79 @@
+<!-- gestion_stock/templates/gestion_stock/articles/supprimer.html -->
+{% extends 'base.html' %}
+
+{% block title %}Supprimer l'Article{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <div class="card border-danger">
+                <div class="card-header bg-danger text-white">
+                    <h4 class="mb-0">
+                        <i class="fas fa-exclamation-triangle me-2"></i>Confirmer la suppression
+                    </h4>
+                </div>
+                
+                <div class="card-body">
+                    <div class="alert alert-danger">
+                        <i class="fas fa-exclamation-circle me-2"></i>
+                        <strong>ATTENTION !</strong> Vous êtes sur le point de supprimer définitivement cet article.
+                    </div>
+                    
+                    <div class="card mb-4">
+                        <div class="card-body">
+                            <h5>Article à supprimer :</h5>
+                            <table class="table">
+                                <tr>
+                                    <th>Code :</th>
+                                    <td>{{ article.code_article }}</td>
+                                </tr>
+                                <tr>
+                                    <th>Désignation :</th>
+                                    <td>{{ article.designation }}</td>
+                                </tr>
+                                <tr>
+                                    <th>Catégorie :</th>
+                                    <td>{{ article.categorie.nom|default:"Non catégorisé" }}</td>
+                                </tr>
+                                <tr>
+                                    <th>Stock actuel :</th>
+                                    <td>
+                                        <span class="badge bg-warning">{{ article.quantite_stock }} unités</span>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <th>Valeur du stock :</th>
+                                    <td class="text-danger">{{ article.valeur_stock|floatformat:2 }} GNF</td>
+                                </tr>
+                            </table>
+                            
+                            <div class="alert alert-warning">
+                                <i class="fas fa-info-circle me-2"></i>
+                                Cette action supprimera également :
+                                <ul class="mb-0 mt-2">
+                                    <li>Toutes les données de stock associées</li>
+                                    <li>L'historique des mouvements</li>
+                                    <li>Les alertes liées à cet article</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <form method="post">
+                        {% csrf_token %}
+                        <div class="d-grid gap-2">
+                            <button type="submit" class="btn btn-danger" onclick="return confirm('Êtes-vous ABSOLUMENT sûr ? Cette action est irréversible !')">
+                                <i class="fas fa-trash me-2"></i> Confirmer la suppression
+                            </button>
+                            <a href="{% url 'detail_article' article.pk %}" class="btn btn-secondary">
+                                <i class="fas fa-times me-2"></i> Annuler et retourner
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

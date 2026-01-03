@@ -1,0 +1,130 @@
+<!-- gestion_stock/templates/gestion_stock/articles/modifier.html -->
+{% extends 'base.html' %}
+
+{% block title %}Modifier l'Article{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <div class="row justify-content-center">
+        <div class="col-lg-10">
+            <div class="card">
+                <div class="card-header bg-warning text-white">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h4 class="mb-0">
+                            <i class="fas fa-edit me-2"></i>Modifier l'Article
+                        </h4>
+                        <a href="{% url 'detail_article' article.pk %}" class="btn btn-light btn-sm">
+                            <i class="fas fa-arrow-left me-1"></i> Retour
+                        </a>
+                    </div>
+                </div>
+                
+                <div class="card-body">
+                    <form method="post">
+                        {% csrf_token %}
+                        
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Code article *</label>
+                                <input type="text" name="code_article" class="form-control" 
+                                       value="{{ article.code_article }}" required readonly>
+                                <small class="text-muted">Le code article ne peut pas être modifié</small>
+                            </div>
+                            
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Code-barres</label>
+                                <input type="text" name="code_barre" class="form-control" 
+                                       value="{{ article.code_barre|default:'' }}">
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label">Désignation *</label>
+                            <input type="text" name="designation" class="form-control" 
+                                   value="{{ article.designation }}" required>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Catégorie</label>
+                                <select name="categorie" class="form-control">
+                                    <option value="">Sélectionnez une catégorie</option>
+                                    {% for cat in categories %}
+                                    <option value="{{ cat.id }}" 
+                                            {% if article.categorie.id == cat.id %}selected{% endif %}>
+                                        {{ cat.nom }}
+                                    </option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Unité</label>
+                                <select name="unite" class="form-control">
+                                    {% for key, value in unite_choices %}
+                                    <option value="{{ key }}" 
+                                            {% if article.unite == key %}selected{% endif %}>
+                                        {{ value }}
+                                    </option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Prix d'achat (GNF) *</label>
+                                <input type="number" name="prix_achat" class="form-control" 
+                                       step="0.01" min="0" value="{{ article.prix_achat }}" required>
+                            </div>
+                            
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Prix de vente (GNF) *</label>
+                                <input type="number" name="prix_vente" class="form-control" 
+                                       step="0.01" min="0" value="{{ article.prix_vente }}" required>
+                            </div>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Seuil d'alerte</label>
+                                <input type="number" name="seuil_alerte" class="form-control" 
+                                       min="0" value="{{ article.seuil_alerte }}">
+                            </div>
+                            
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Emplacement</label>
+                                <input type="text" name="emplacement" class="form-control" 
+                                       value="{{ article.emplacement|default:'' }}">
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label">Date de péremption</label>
+                            <input type="date" name="date_peremption" class="form-control" 
+                                   value="{{ article.date_peremption|date:'Y-m-d'|default:'' }}">
+                        </div>
+                        
+                        <div class="mb-4">
+                            <div class="form-check form-switch">
+                                <input type="checkbox" name="actif" class="form-check-input" id="actif" 
+                                       {% if article.actif %}checked{% endif %}>
+                                <label class="form-check-label" for="actif">Article actif</label>
+                            </div>
+                        </div>
+                        
+                        <div class="d-grid gap-2">
+                            <button type="submit" class="btn btn-success">
+                                <i class="fas fa-save me-2"></i> Enregistrer les modifications
+                            </button>
+                            <a href="{% url 'detail_article' article.pk %}" class="btn btn-secondary">
+                                <i class="fas fa-times me-2"></i> Annuler
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

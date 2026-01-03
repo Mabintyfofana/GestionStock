@@ -1,0 +1,163 @@
+{% extends 'base.html' %}
+{% load crispy_forms_tags %}
+
+{% block title %}Ajustement de Stock{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        <div class="card shadow">
+            <div class="card-header bg-info text-white py-3">
+                <div class="d-flex justify-content-between align-items-center">
+                    <h4 class="mb-0">
+                        <i class="fas fa-adjust me-2"></i>Ajustement de Stock
+                    </h4>
+                    <a href="{% url 'inventaire_stock' %}" class="btn btn-light btn-sm">
+                        <i class="fas fa-clipboard-list me-1"></i> Inventaire
+                    </a>
+                </div>
+            </div>
+            
+            <div class="card-body p-4">
+                <form method="post">
+                    {% csrf_token %}
+                    
+                    <div class="row mb-4">
+                        <div class="col-md-6">
+                            {{ form.article|as_crispy_field }}
+                        </div>
+                        <div class="col-md-6">
+                            <div class="card bg-light">
+                                <div class="card-body text-center">
+                                    <h6 class="card-title text-muted">Stock système</h6>
+                                    <h3 id="stock-systeme" class="card-text">--</h3>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="row mb-4">
+                        <div class="col-md-6">
+                            {{ form.quantite_reelle|as_crispy_field }}
+                        </div>
+                        <div class="col-md-6">
+                            {{ form.raison|as_crispy_field }}
+                        </div>
+                    </div>
+                    
+                    <div class="mb-4">
+                        {{ form.description|as_crispy_field }}
+                    </div>
+                    
+                    <!-- Calcul de la différence -->
+                    <div class="card mb-4">
+                        <div class="card-body">
+                            <h6 class="card-title mb-3">Résultat de l'ajustement</h6>
+                            <div class="row text-center">
+                                <div class="col-md-4">
+                                    <div class="card bg-light">
+                                        <div class="card-body">
+                                            <h6 class="card-title text-muted">Stock système</h6>
+                                            <h4 id="stock-systeme-result" class="card-text">--</h4>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="card bg-light">
+                                        <div class="card-body">
+                                            <h6 class="card-title text-muted">Stock réel</h6>
+                                            <h4 id="stock-reel-result" class="card-text">--</h4>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="card bg-light">
+                                        <div class="card-body">
+                                            <h6 class="card-title text-muted">Différence</h6>
+                                            <h4 id="difference-result" class="card-text">--</h4>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                        <a href="{% url 'liste_articles' %}" class="btn btn-secondary me-md-2">
+                            <i class="fas fa-times me-1"></i> Annuler
+                        </a>
+                        <button type="submit" class="btn btn-success">
+                            <i class="fas fa-check me-1"></i> Valider l'ajustement
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+$(document).ready(function() {
+    // Pré-remplir l'article depuis l'URL
+    var urlArticle = new URLSearchParams(window.location.search).get('article');
+    if (urlArticle) {
+        $('#id_article').val(urlArticle);
+        updateStockInfo(urlArticle);
+    }
+    
+    // Mettre à jour les infos quand l'article change
+    $('#id_article').change(function() {
+        updateStockInfo($(this).val());
+    });
+    
+    // Calculer la différence quand la quantité réelle change
+    $('#id_quantite_reelle').on('input', function() {
+        calculerDifference();
+    });
+    
+    // Mettre à jour les informations de stock
+    function updateStockInfo(articleId) {
+        if (!articleId) return;
+        
+        $.ajax({
+            url: '{% url "api_stock_actuel" %}?article=' + articleId,
+            method: 'GET',
+            success: function(data) {
+                $('#stock-systeme').text(data.quantite);
+                $('#stock-systeme-result').text(data.quantite);
+                calculerDifference();
+            }
+        });
+    }
+    
+    // Calculer la différence
+    function calculerDifference() {
+        var stockSysteme = parseInt($('#stock-systeme').text()) || 0;
+        var stockReel = parseInt($('#id_quantite_reelle').val()) || 0;
+        
+        $('#stock-reel-result').text(stockReel);
+        
+        var difference = stockReel - stockSysteme;
+        $('#difference-result').text(difference);
+        
+        // Colorer la différence
+        var diffElement = $('#difference-result');
+        diffElement.removeClass('text-success text-danger');
+        
+        if (difference > 0) {
+            diffElement.addClass('text-success');
+        } else if (difference < 0) {
+            diffElement.addClass('text-danger');
+        }
+    }
+    
+    // Initialiser les infos si un article est déjà sélectionné
+    var selectedArticle = $('#id_article').val();
+    if (selectedArticle) {
+        updateStockInfo(selectedArticle);
+    }
+});
+</script>
+{% endblock %}

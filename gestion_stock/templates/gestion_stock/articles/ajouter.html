@@ -1,0 +1,102 @@
+{% extends 'base.html' %}
+{% load crispy_forms_tags %}
+
+{% block title %}Ajouter un Article{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-10">
+        <div class="card shadow">
+            <div class="card-header bg-primary text-white py-3">
+                <div class="d-flex justify-content-between align-items-center">
+                    <h4 class="mb-0">
+                        <i class="fas fa-plus-circle me-2"></i>Nouvel Article
+                    </h4>
+                    <a href="{% url 'liste_articles' %}" class="btn btn-light btn-sm">
+                        <i class="fas fa-arrow-left me-1"></i> Retour
+                    </a>
+                </div>
+            </div>
+            
+            <div class="card-body p-4">
+                <form method="post" enctype="multipart/form-data">
+                    {% csrf_token %}
+                    
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="card mb-4">
+                                <div class="card-header bg-light">
+                                    <h5 class="mb-0">Informations de base</h5>
+                                </div>
+                                <div class="card-body">
+                                    {{ form.code_article|as_crispy_field }}
+                                    {{ form.designation|as_crispy_field }}
+                                    {{ form.categorie|as_crispy_field }}
+                                    {{ form.unite|as_crispy_field }}
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-6">
+                            <div class="card mb-4">
+                                <div class="card-header bg-light">
+                                    <h5 class="mb-0">Prix et Stock</h5>
+                                </div>
+                                <div class="card-body">
+                                    <div class="row">
+                                        <div class="col-md-6">
+                                            {{ form.prix_achat|as_crispy_field }}
+                                        </div>
+                                        <div class="col-md-6">
+                                            {{ form.prix_vente|as_crispy_field }}
+                                        </div>
+                                    </div>
+                                    {{ form.seuil_alerte|as_crispy_field }}
+                                    {{ form.emplacement|as_crispy_field }}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="card mb-4">
+                                <div class="card-header bg-light">
+                                    <h5 class="mb-0">Code-barres et Péremption</h5>
+                                </div>
+                                <div class="card-body">
+                                    {{ form.code_barre|as_crispy_field }}
+                                    {{ form.date_peremption|as_crispy_field }}
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-6">
+                            <div class="card mb-4">
+                                <div class="card-header bg-light">
+                                    <h5 class="mb-0">Fournisseur</h5>
+                                </div>
+                                <div class="card-body">
+                                    {{ form.fournisseur|as_crispy_field }}
+                                    <div class="form-check form-switch mt-3">
+                                        {{ form.actif|as_crispy_field }}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                        <button type="reset" class="btn btn-secondary me-md-2">
+                            <i class="fas fa-undo me-1"></i> Réinitialiser
+                        </button>
+                        <button type="submit" class="btn btn-success">
+                            <i class="fas fa-save me-1"></i> Enregistrer l'article
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

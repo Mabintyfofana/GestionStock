@@ -1,0 +1,169 @@
+{% extends 'base.html' %}
+{% load custom_filters %}
+
+{% block title %}Détail de l'Article{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="h3 mb-0">
+            <i class="fas fa-box me-2"></i>{{ article.designation }}
+        </h1>
+        
+        <div class="btn-group">
+            <a href="{% url 'liste_articles' %}" class="btn btn-outline-secondary">
+                <i class="fas fa-arrow-left me-1"></i> Retour
+            </a>
+            {% if user.profilutilisateur.role in 'admin,gestionnaire' %}
+            <a href="{% url 'modifier_article' article.pk %}" class="btn btn-warning">
+                <i class="fas fa-edit me-1"></i> Modifier
+            </a>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-lg-8">
+            <div class="card mb-4">
+                <div class="card-header bg-light">
+                    <h5 class="mb-0">Informations de l'article</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <table class="table table-borderless">
+                                <tr>
+                                    <th width="40%">Code article:</th>
+                                    <td><strong>{{ article.code_article }}</strong></td>
+                                </tr>
+                                <tr>
+                                    <th>Code-barres:</th>
+                                    <td>{{ article.code_barre|default:"Non défini" }}</td>
+                                </tr>
+                                <tr>
+                                    <th>Catégorie:</th>
+                                    <td>
+                                        {% if article.categorie %}
+                                        <span class="badge bg-info">{{ article.categorie.nom }}</span>
+                                        {% else %}
+                                        Non catégorisé
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <th>Unité:</th>
+                                    <td>{{ article.get_unite_display }}</td>
+                                </tr>
+                                <tr>
+                                    <th>Emplacement:</th>
+                                    <td>{{ article.emplacement|default:"Non spécifié" }}</td>
+                                </tr>
+                            </table>
+                        </div>
+                        
+                        <div class="col-md-6">
+                            <table class="table table-borderless">
+                                <tr>
+                                    <th width="40%">Prix d'achat:</th>
+                                    <td class="text-success">{{ article.prix_achat|floatformat:2 }} GNF</td>
+                                </tr>
+                                <tr>
+                                    <th>Prix de vente:</th>
+                                    <td class="text-primary">{{ article.prix_vente|floatformat:2 }} GNF</td>
+                                </tr>
+                                <tr>
+                                    <th>Marge:</th>
+                                    <td>
+                                        <span class="badge bg-success">
+                                            {{ article.prix_vente|sub:article.prix_achat|floatformat:2 }} GNF
+                                        </span>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <th>Seuil d'alerte:</th>
+                                    <td>
+                                        <span class="badge bg-warning">{{ article.seuil_alerte }}</span>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <th>Date péremption:</th>
+                                    <td>
+                                        {% if article.date_peremption %}
+                                        {{ article.date_peremption|date:"d/m/Y" }}
+                                        {% else %}
+                                        Non définie
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-lg-4">
+            <!-- Statut -->
+            <div class="card mb-4">
+                <div class="card-header bg-light">
+                    <h5 class="mb-0">Statut du stock</h5>
+                </div>
+                <div class="card-body text-center">
+                    <h2 class="mb-3 
+                        {% if article.quantite_stock <= article.seuil_alerte %}text-danger
+                        {% elif article.quantite_stock == 0 %}text-danger
+                        {% else %}text-success{% endif %}">
+                        {{ article.quantite_stock }} unités
+                    </h2>
+                    
+                    <div class="mb-3">
+                        <span class="badge bg-secondary">Valeur stock: {{ article.valeur_stock|floatformat:2 }} GNF</span>
+                    </div>
+                    
+                    {% if article.quantite_stock <= article.seuil_alerte and article.quantite_stock > 0 %}
+                    <div class="alert alert-warning">
+                        <i class="fas fa-exclamation-circle me-2"></i>
+                        Stock faible! Seuil: {{ article.seuil_alerte }} unités
+                    </div>
+                    {% elif article.quantite_stock == 0 %}
+                    <div class="alert alert-danger">
+                        <i class="fas fa-times-circle me-2"></i>
+                        Rupture de stock!
+                    </div>
+                    {% else %}
+                    <div class="alert alert-success">
+                        <i class="fas fa-check-circle me-2"></i>
+                        Stock normal
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+            
+            <!-- Actions rapides -->
+            {% if user.profilutilisateur.role in 'admin,gestionnaire' %}
+            <div class="card">
+                <div class="card-header bg-light">
+                    <h5 class="mb-0">Actions rapides</h5>
+                </div>
+                <div class="card-body">
+                    <div class="d-grid gap-2">
+                        <a href="{% url 'mouvement_stock' %}?article={{ article.pk }}&type=entree" 
+                           class="btn btn-success">
+                            <i class="fas fa-plus-circle me-1"></i> Entrée de stock
+                        </a>
+                        <a href="{% url 'mouvement_stock' %}?article={{ article.pk }}&type=sortie" 
+                           class="btn btn-warning">
+                            <i class="fas fa-minus-circle me-1"></i> Sortie de stock
+                        </a>
+                        <a href="{% url 'ajuster_stock' %}?article={{ article.pk }}" 
+                           class="btn btn-info">
+                            <i class="fas fa-adjust me-1"></i> Ajuster stock
+                        </a>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}
