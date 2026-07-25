@@ -1,3 +1,4 @@
+import json
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import User
@@ -65,7 +66,50 @@ def dashboard(request):
     
     # Articles en rupture
     articles_rupture = Article.objects.filter(stock__quantite=0, actif=True)[:5]
-    
+
+    # --- DONNÉES GRAPHIQUES RÉELLES ---
+
+    # 1. Stock par catégorie (Donut)
+    categories_stock = (
+        Categorie.objects.annotate(
+            total_qte=Sum('article__stock__quantite')
+        ).filter(total_qte__gt=0).values('nom', 'total_qte')
+    )
+    chart_categories_labels = json.dumps([c['nom'] for c in categories_stock])
+    chart_categories_data   = json.dumps([int(c['total_qte']) for c in categories_stock])
+
+    # 2. Mouvements des 7 derniers jours (Barres)
+    jours_labels = []
+    entrees_data = []
+    sorties_data = []
+    for i in range(6, -1, -1):
+        jour = timezone.now().date() - timedelta(days=i)
+        jours_labels.append(jour.strftime('%a %d/%m'))
+        entrees_data.append(
+            MouvementStock.objects.filter(
+                type_mouvement='entree',
+                date_mouvement__date=jour
+            ).aggregate(total=Sum('quantite'))['total'] or 0
+        )
+        sorties_data.append(
+            MouvementStock.objects.filter(
+                type_mouvement='sortie',
+                date_mouvement__date=jour
+            ).aggregate(total=Sum('quantite'))['total'] or 0
+        )
+    chart_jours_labels  = json.dumps(jours_labels)
+    chart_entrees_data  = json.dumps(entrees_data)
+    chart_sorties_data  = json.dumps(sorties_data)
+
+    # 3. Top 5 articles les plus en stock (Barres horizontales)
+    top_articles = (
+        Stock.objects.select_related('article')
+        .order_by('-quantite')[:5]
+        .values('article__designation', 'quantite')
+    )
+    chart_top_labels = json.dumps([a['article__designation'][:25] for a in top_articles])
+    chart_top_data   = json.dumps([a['quantite'] for a in top_articles])
+
     context = {
         'total_articles': total_articles,
         'total_stock': total_stock,
@@ -74,6 +118,14 @@ def dashboard(request):
         'alertes_peremption': alertes_peremption,
         'derniers_mouvements': derniers_mouvements,
         'articles_rupture': articles_rupture,
+        # Données graphiques
+        'chart_categories_labels': chart_categories_labels,
+        'chart_categories_data': chart_categories_data,
+        'chart_jours_labels': chart_jours_labels,
+        'chart_entrees_data': chart_entrees_data,
+        'chart_sorties_data': chart_sorties_data,
+        'chart_top_labels': chart_top_labels,
+        'chart_top_data': chart_top_data,
     }
     
     return render(request, 'gestion_stock/dashboard.html', context)
@@ -392,7 +444,7 @@ def inventaire_stock(request):
         return redirect('historique_mouvements')
     
     # GET request: afficher la liste des articles pour inventaire
-    articles = Article.objects.select_related('stock').filter(actif=True)
+    articles = Article.objects.prefetch_related('stock_set').filter(actif=True)
     context = {
         'articles': articles,
     }
@@ -837,6 +889,82 @@ def generer_etat_stock_pdf(request):
     
     response = HttpResponse(buffer, content_type='application/pdf')
     response['Content-Disposition'] = 'attachment; filename="etat_stock.pdf"'
+    return response
+
+@login_required
+@gestionnaire_required
+def generer_bon_commande_pdf(request, pk):
+    commande = get_object_or_404(CommandeFournisseur, pk=pk)
+    
+    buffer = BytesIO()
+    p = canvas.Canvas(buffer, pagesize=A4)
+    width, height = A4
+    
+    # En-tête Entreprise
+    p.setFont("Helvetica-Bold", 16)
+    p.drawString(50, height - 50, "STOCKMASTER PRO")
+    p.setFont("Helvetica", 10)
+    p.drawString(50, height - 65, "Système de Gestion de Stock")
+    
+    # Titre du document
+    p.setFont("Helvetica-Bold", 14)
+    p.drawString(200, height - 100, f"BON DE COMMANDE N° {commande.numero}")
+    
+    # Informations Fournisseur
+    p.setFont("Helvetica-Bold", 10)
+    p.drawString(50, height - 140, "FOURNISSEUR :")
+    p.setFont("Helvetica", 10)
+    p.drawString(50, height - 155, f"Nom : {commande.fournisseur.nom}")
+    p.drawString(50, height - 170, f"Contact : {commande.fournisseur.contact}")
+    p.drawString(50, height - 185, f"Téléphone : {commande.fournisseur.telephone}")
+    if commande.fournisseur.email:
+        p.drawString(50, height - 200, f"Email : {commande.fournisseur.email}")
+    
+    # Informations Commande
+    p.setFont("Helvetica-Bold", 10)
+    p.drawString(350, height - 140, "DÉTAILS COMMANDE :")
+    p.setFont("Helvetica", 10)
+    p.drawString(350, height - 155, f"Date : {commande.date_commande.strftime('%d/%m/%Y')}")
+    p.drawString(350, height - 170, f"Statut : {commande.get_statut_display()}")
+    
+    # Tableau Lignes de Commande
+    y = height - 240
+    p.setFont("Helvetica-Bold", 10)
+    p.drawString(50, y, "Article")
+    p.drawString(300, y, "Quantité")
+    p.drawString(380, y, "Prix Unitaire")
+    p.drawString(480, y, "Total")
+    
+    p.line(50, y - 5, 550, y - 5)
+    
+    y -= 20
+    p.setFont("Helvetica", 10)
+    lignes = commande.lignes.all()
+    for ligne in lignes:
+        if y < 100:  # Nouvelle page si besoin
+            p.showPage()
+            p.setFont("Helvetica", 10)
+            y = height - 50
+        
+        p.drawString(50, y, ligne.article.designation[:40])
+        p.drawString(300, y, str(ligne.quantite))
+        p.drawString(380, y, f"{ligne.prix_unitaire:.2f}")
+        p.drawString(480, y, f"{ligne.total:.2f}")
+        y -= 20
+        
+    p.line(50, y, 550, y)
+    
+    # Montant Total
+    y -= 20
+    p.setFont("Helvetica-Bold", 12)
+    p.drawString(350, y, "TOTAL COMMANDE :")
+    p.drawString(480, y, f"{commande.montant_total:.2f} GNF")
+    
+    p.save()
+    buffer.seek(0)
+    
+    response = HttpResponse(buffer, content_type='application/pdf')
+    response['Content-Disposition'] = f'attachment; filename="bon_commande_{commande.numero}.pdf"'
     return response
 
 # API pour le scan de code-barres

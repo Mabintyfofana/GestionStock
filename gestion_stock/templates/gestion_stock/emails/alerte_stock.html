@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Alerte Stock — {{ type_alerte }}</title>
+</head>
+<body style="margin:0;padding:0;background:#f4f6fb;font-family:'Segoe UI',Arial,sans-serif;">
+<table width="100%" cellpadding="0" cellspacing="0" style="background:#f4f6fb;padding:30px 0;">
+  <tr>
+    <td align="center">
+      <table width="600" cellpadding="0" cellspacing="0" style="background:#ffffff;border-radius:12px;overflow:hidden;box-shadow:0 4px 20px rgba(0,0,0,0.08);">
+
+        <!-- En-tête -->
+        <tr>
+          <td style="background:linear-gradient(135deg,#4f46e5 0%,#7c3aed 100%);padding:32px 40px;text-align:center;">
+            <h1 style="margin:0;color:#ffffff;font-size:22px;font-weight:700;letter-spacing:0.5px;">
+              📦 StockMaster Pro
+            </h1>
+            <p style="margin:8px 0 0;color:rgba(255,255,255,0.8);font-size:14px;">Système de Gestion de Stock</p>
+          </td>
+        </tr>
+
+        <!-- Badge alerte -->
+        <tr>
+          <td style="padding:32px 40px 16px;text-align:center;">
+            <span style="display:inline-block;padding:8px 24px;border-radius:50px;font-size:13px;font-weight:600;
+              background:{% if niveau == 'danger' %}#fef2f2{% elif niveau == 'warning' %}#fffbeb{% else %}#eff6ff{% endif %};
+              color:{% if niveau == 'danger' %}#dc2626{% elif niveau == 'warning' %}#d97706{% else %}#2563eb{% endif %};
+              border:1px solid {% if niveau == 'danger' %}#fecaca{% elif niveau == 'warning' %}#fde68a{% else %}#bfdbfe{% endif %};">
+              {% if niveau == 'danger' %}🔴{% elif niveau == 'warning' %}🟡{% else %}🔵{% endif %}
+              {{ type_alerte }}
+            </span>
+          </td>
+        </tr>
+
+        <!-- Titre -->
+        <tr>
+          <td style="padding:0 40px 24px;text-align:center;">
+            <h2 style="margin:0;font-size:20px;color:#111827;font-weight:700;">{{ titre }}</h2>
+            <p style="margin:10px 0 0;font-size:15px;color:#6b7280;line-height:1.6;">{{ message }}</p>
+          </td>
+        </tr>
+
+        <!-- Tableau des articles -->
+        {% if articles %}
+        <tr>
+          <td style="padding:0 40px 32px;">
+            <table width="100%" cellpadding="0" cellspacing="0" style="border-radius:8px;overflow:hidden;border:1px solid #e5e7eb;">
+              <tr style="background:#f9fafb;">
+                <th style="padding:12px 16px;text-align:left;font-size:12px;color:#6b7280;text-transform:uppercase;letter-spacing:0.5px;border-bottom:1px solid #e5e7eb;">Article</th>
+                <th style="padding:12px 16px;text-align:center;font-size:12px;color:#6b7280;text-transform:uppercase;letter-spacing:0.5px;border-bottom:1px solid #e5e7eb;">Stock actuel</th>
+                <th style="padding:12px 16px;text-align:center;font-size:12px;color:#6b7280;text-transform:uppercase;letter-spacing:0.5px;border-bottom:1px solid #e5e7eb;">Seuil alerte</th>
+                <th style="padding:12px 16px;text-align:center;font-size:12px;color:#6b7280;text-transform:uppercase;letter-spacing:0.5px;border-bottom:1px solid #e5e7eb;">{{ colonne_extra }}</th>
+              </tr>
+              {% for art in articles %}
+              <tr style="background:{% cycle '#ffffff' '#f9fafb' %};">
+                <td style="padding:12px 16px;font-size:14px;color:#111827;font-weight:500;border-bottom:1px solid #f3f4f6;">{{ art.designation }}</td>
+                <td style="padding:12px 16px;text-align:center;font-size:14px;font-weight:700;color:{% if niveau == 'danger' %}#dc2626{% elif niveau == 'warning' %}#d97706{% else %}#2563eb{% endif %};border-bottom:1px solid #f3f4f6;">{{ art.quantite_stock }}</td>
+                <td style="padding:12px 16px;text-align:center;font-size:14px;color:#6b7280;border-bottom:1px solid #f3f4f6;">{{ art.seuil_alerte }}</td>
+                <td style="padding:12px 16px;text-align:center;font-size:14px;color:#374151;border-bottom:1px solid #f3f4f6;">{{ art.valeur_extra }}</td>
+              </tr>
+              {% endfor %}
+            </table>
+          </td>
+        </tr>
+        {% endif %}
+
+        <!-- Bouton CTA -->
+        <tr>
+          <td style="padding:0 40px 40px;text-align:center;">
+            <a href="{{ app_url }}" style="display:inline-block;padding:14px 36px;background:linear-gradient(135deg,#4f46e5,#7c3aed);color:#ffffff;text-decoration:none;border-radius:8px;font-size:15px;font-weight:600;letter-spacing:0.3px;">
+              Voir le tableau de bord →
+            </a>
+          </td>
+        </tr>
+
+        <!-- Pied de page -->
+        <tr>
+          <td style="background:#f9fafb;padding:20px 40px;text-align:center;border-top:1px solid #e5e7eb;">
+            <p style="margin:0;font-size:12px;color:#9ca3af;">
+              Cet e-mail a été généré automatiquement par <strong>StockMaster Pro</strong>.<br>
+              {{ date_envoi }}
+            </p>
+          </td>
+        </tr>
+
+      </table>
+    </td>
+  </tr>
+</table>
+</body>
+</html>

@@ -275,6 +275,14 @@ LOGOUT_REDIRECT_URL = 'login'  # où rediriger après logout
 SESSION_COOKIE_AGE = 3600  # durée de session en secondes (1 heure)
 SESSION_EXPIRE_AT_BROWSER_CLOSE = True  # expire à la fermeture du navigateur
 
-# Configuration email utilisée localement pour afficher les emails dans la console
-# En production remplacer par SMTP / service d'envoi réel
-EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
+# ---- Configuration Email (SMTP via .env) ----
+EMAIL_BACKEND    = os.getenv('EMAIL_BACKEND', 'django.core.mail.backends.smtp.EmailBackend')
+EMAIL_HOST       = os.getenv('EMAIL_HOST', 'smtp.gmail.com')
+EMAIL_PORT       = int(os.getenv('EMAIL_PORT', 587))
+EMAIL_USE_TLS    = os.getenv('EMAIL_USE_TLS', 'True') == 'True'
+EMAIL_HOST_USER  = os.getenv('EMAIL_HOST_USER', '')
+EMAIL_HOST_PASSWORD = os.getenv('EMAIL_HOST_PASSWORD', '')
+DEFAULT_FROM_EMAIL = os.getenv('DEFAULT_FROM_EMAIL', 'StockMaster Pro <no-reply@stockmaster.com>')
+
+# Adresses e-mail des administrateurs pour les alertes automatiques
+ADMIN_EMAILS = [e.strip() for e in os.getenv('ADMIN_EMAILS', '').split(',') if e.strip()]

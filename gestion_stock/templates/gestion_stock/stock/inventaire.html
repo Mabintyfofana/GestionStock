@@ -1,0 +1,75 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Inventaire Physique{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1 class="h3 mb-0">
+        <i class="fas fa-clipboard-list me-2"></i>Inventaire Physique
+    </h1>
+    <a href="{% url 'liste_articles' %}" class="btn btn-outline-secondary">
+        <i class="fas fa-arrow-left me-1"></i> Retour aux articles
+    </a>
+</div>
+
+<div class="card shadow-sm">
+    <div class="card-header bg-white border-bottom">
+        <h5 class="mb-0"><i class="fas fa-boxes me-2"></i>Saisie de l'inventaire</h5>
+        <p class="text-muted small mb-0 mt-1">Saisissez les quantités réelles comptées. Laissez vide si la quantité est correcte.</p>
+    </div>
+    <div class="card-body p-0">
+        <form method="post" action="{% url 'inventaire_stock' %}">
+            {% csrf_token %}
+            
+            <div class="table-responsive">
+                <table class="table table-hover mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Code</th>
+                            <th>Désignation</th>
+                            <th class="text-center">Stock Système</th>
+                            <th class="text-center" style="width: 200px;">Quantité Réelle</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for article in articles %}
+                        <tr>
+                            <td class="align-middle"><strong>{{ article.code_article }}</strong></td>
+                            <td class="align-middle">{{ article.designation }}</td>
+                            <td class="text-center align-middle">
+                                <span class="badge bg-secondary">{{ article.quantite_stock }}</span>
+                            </td>
+                            <td class="align-middle">
+                                <input type="hidden" name="articles[]" value="{{ article.id }}">
+                                <input type="number" 
+                                       name="quantites_reelles[]" 
+                                       class="form-control text-center" 
+                                       value="{{ article.quantite_stock }}" 
+                                       min="0"
+                                       required>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="4" class="text-center py-4 text-muted">
+                                <i class="fas fa-box-open fa-2x mb-2 d-block"></i>
+                                Aucun article trouvé pour l'inventaire.
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            
+            {% if articles %}
+            <div class="card-footer bg-white border-top p-3 text-end">
+                <button type="submit" class="btn btn-success">
+                    <i class="fas fa-save me-2"></i>Enregistrer l'inventaire
+                </button>
+            </div>
+            {% endif %}
+        </form>
+    </div>
+</div>
+{% endblock %}

@@ -40,6 +40,7 @@ urlpatterns = [
     path('commandes/', login_required(gestionnaire_required(views.liste_commandes)), name='liste_commandes'),
     path('commandes/ajouter/', login_required(gestionnaire_required(views.ajouter_commande)), name='ajouter_commande'),
     path('commandes/detail/<int:pk>/', login_required(gestionnaire_required(views.detail_commande)), name='detail_commande'),
+    path('commandes/pdf/<int:pk>/', login_required(gestionnaire_required(views.generer_bon_commande_pdf)), name='generer_bon_commande_pdf'),
     
     # Alertes
     path('alertes/', login_required(vendeur_required(views.alertes)), name='alertes'),
