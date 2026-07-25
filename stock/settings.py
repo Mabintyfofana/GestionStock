@@ -37,7 +37,7 @@
 #     'django.contrib.sessions',
 #     'django.contrib.messages',
 #     'django.contrib.staticfiles',
-# ]
+
 
 # MIDDLEWARE = [
 #     'django.middleware.security.SecurityMiddleware',
@@ -127,26 +127,29 @@
 """
 Django settings for stock project.
 """
+import os  # accès aux variables d'environnement et chemins
+from pathlib import Path  # manipulation de chemins OS-agnostiques
+from dotenv import load_dotenv  # chargement des variables depuis .env
 
-import os
-from pathlib import Path
-from dotenv import load_dotenv
+load_dotenv()  # charge les variables d'environnement depuis un fichier .env si présent
 
-load_dotenv()
-
-# Build paths inside the project like this: BASE_DIR / 'subdir'.
+# Chemin de base du projet (deux niveaux au-dessus de ce fichier)
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-# SECURITY WARNING: keep the secret key used in production secret!
-#SECRET_KEY = os.getenv('SECRET_KEY', 'django-insecure-default-key-change-in-production')
-SECRET_KEY = 'django-insecure-fxf$tynj3apu2lz)-5iy+ktgoc)wb%n6#uu4ait#ubiy&-5tt8'
+# Clé secrète de Django — ne pas exposer en production
+# Ici elle est en clair pour le développement; utiliser une variable d'environnement
+SECRET_KEY = os.getenv('SECRET_KEY', 'django-insecure-fxf$tynj3apu2lz)-5iy+ktgoc)wb%n6#uu4ait#ubiy&-5tt8')
 
-# SECURITY WARNING: don't run with debug turned on in production!
+# Mode DEBUG (True = information détaillée, à désactiver en production)
 DEBUG = True
 
+# Hôtes autorisés (mettre la/les domain(es) en production)
 ALLOWED_HOSTS = []
 
-# Application definition
+# Applications installées
+# - apps Django par défaut
+# - bibliothèques tierces utilisées par le projet
+# - applications locales du projet
 INSTALLED_APPS = [
     'django.contrib.admin',
     'django.contrib.auth',
@@ -154,18 +157,23 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    
-    # Third party apps
+
+    # Bibliothèques tierces
     'django_bootstrap5',
     'crispy_forms',
     'crispy_bootstrap5',
     'import_export',
     'qr_code',
-    
-    # Local apps
+
+    # Application locale principale
     'gestion_stock',
 ]
 
+# Configuration Crispy Forms (pack Bootstrap5)
+CRISPY_ALLOWED_TEMPLATE_PACKS = "bootstrap5"
+CRISPY_TEMPLATE_PACK = "bootstrap5"
+
+# Middleware : couche par couche gérée par Django
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
@@ -176,36 +184,51 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
 
+# Module racine des URLs pour le projet
 ROOT_URLCONF = 'stock.urls'
 
+# Configuration des templates Django
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
+        # Dossier global de templates à la racine du projet
         'DIRS': [os.path.join(BASE_DIR, 'templates')],
-        'APP_DIRS': True,
+        'APP_DIRS': True,  # recherche automatique dans les dossiers templates des apps
         'OPTIONS': {
             'context_processors': [
                 'django.template.context_processors.debug',
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
+                # context processor local pour notifications/alertes
                 'gestion_stock.context_processors.notification_context',
             ],
         },
     },
 ]
 
+# Application WSGI
 WSGI_APPLICATION = 'stock.wsgi.application'
 
-# Database
+# Base de données : configuration par défaut SQLite pour le développement
+
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+        'ENGINE': 'mssql',
+        'NAME': 'GestionStock',
+        'USER': 'sa',
+        'PASSWORD': 'Masitan1',
+        'HOST': r'localhost\SQLEXPRESS',
+        'PORT': '',
+        'OPTIONS': {
+            'driver': 'ODBC Driver 17 for SQL Server',
+            'trusted_connection': 'yes',
+        },
     }
 }
 
-# Password validation
+
+# Validators de mot de passe fournis par Django (recommandés en production)
 AUTH_PASSWORD_VALIDATORS = [
     {
         'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator',
@@ -221,35 +244,37 @@ AUTH_PASSWORD_VALIDATORS = [
     },
 ]
 
-# Internationalization
-LANGUAGE_CODE = 'fr-fr'
-TIME_ZONE = 'Africa/Abidjan'
-USE_I18N = True
-USE_TZ = True
+# Internationalisation : langue et fuseau horaire
+LANGUAGE_CODE = 'fr-fr'  # interface en français
+TIME_ZONE = 'Africa/Abidjan'  # réglage du fuseau horaire
+USE_I18N = True  # activer la traduction
+USE_TZ = True  # activer la gestion des timezones
 
-# Static files (CSS, JavaScript, Images)
+# Fichiers statiques (CSS, JS, images)
 STATIC_URL = 'static/'
-STATICFILES_DIRS = [os.path.join(BASE_DIR, 'static')]
-STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
+STATICFILES_DIRS = [os.path.join(BASE_DIR, 'static')]  # dossier des assets en dev
+STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')  # dossier collectstatic en prod
 
+# Fichiers média (uploads utilisateur)
 MEDIA_URL = '/media/'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 
-# Default primary key field type
+# Type de clé primaire par défaut pour les modèles
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
-# Crispy Forms
+# Répétition de la config Crispy (sécurise le pack utilisé)
 CRISPY_ALLOWED_TEMPLATE_PACKS = "bootstrap5"
 CRISPY_TEMPLATE_PACK = "bootstrap5"
 
-# Login URLs
-LOGIN_URL = 'login'
-LOGIN_REDIRECT_URL = 'dashboard'
-LOGOUT_REDIRECT_URL = 'login'
+# URLs de redirection après authentification
+LOGIN_URL = 'login'  # nom de la vue de connexion
+LOGIN_REDIRECT_URL = 'dashboard'  # où rediriger après login
+LOGOUT_REDIRECT_URL = 'login'  # où rediriger après logout
 
-# Session
-SESSION_COOKIE_AGE = 3600  # 1 heure
-SESSION_EXPIRE_AT_BROWSER_CLOSE = True
+# Session : durée et comportement à la fermeture du navigateur
+SESSION_COOKIE_AGE = 3600  # durée de session en secondes (1 heure)
+SESSION_EXPIRE_AT_BROWSER_CLOSE = True  # expire à la fermeture du navigateur
 
-# Email configuration (pour les alertes)
+# Configuration email utilisée localement pour afficher les emails dans la console
+# En production remplacer par SMTP / service d'envoi réel
 EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'

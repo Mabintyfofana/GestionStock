@@ -39,6 +39,10 @@ from django.conf import settings
 from django.conf.urls.static import static
 from django.contrib.auth import views as auth_views
 
+# Liste principale des routes de l'application projet `stock`.
+# - Le panneau d'administration standard est disponible sur `/admin/`.
+# - Toutes les routes applicatives sont incluses depuis `gestion_stock.urls`.
+# - Les vues d'authentification Django sont utilisées pour le login/logout.
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('', include('gestion_stock.urls')),
@@ -46,6 +50,7 @@ urlpatterns = [
     path('logout/', auth_views.LogoutView.as_view(), name='logout'),
 ]
 
+# En mode DEBUG on sert les fichiers média et static via Django (pratique en dev)
 if settings.DEBUG:
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
     urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)

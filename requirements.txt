@@ -1,14 +1,11 @@
-# Créer requirements.txt
-pip install django==5.7.1
-pip install django-bootstrap5
-pip install django-crispy-forms
-pip install crispy-bootstrap5
-pip install pillow
-pip install python-dotenv
-pip install reportlab
-pip install django-qr-code
-pip install django-import-export
-pip install django-barcode
-
-# Geler les dépendances
-pip freeze > requirements.txt
+Django==5.2.3
+django-bootstrap5
+django-crispy-forms
+crispy-bootstrap5
+Pillow
+python-dotenv
+reportlab
+django-qr-code
+django-import-export
+python-barcode
+mssql-django
