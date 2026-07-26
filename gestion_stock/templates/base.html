@@ -127,7 +127,28 @@
                             <i class="fas fa-chart-bar me-1"></i> Rapports
                         </a>
                     </li>
+                    {% if user.profilutilisateur.role in 'admin,gestionnaire' %}
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'journal_audit' %}">
+                            <i class="fas fa-history me-1"></i> Audit
+                        </a>
+                    </li>
+                    {% endif %}
                 </ul>
+                
+                <form class="d-flex mx-auto position-relative my-2 my-lg-0" id="global-search-form" style="width: 400px; max-width: 100%;">
+                    <div class="input-group">
+                        <span class="input-group-text bg-white border-0 rounded-start-pill text-muted">
+                            <i class="fas fa-search"></i>
+                        </span>
+                        <input class="form-control border-0 rounded-end-pill bg-white" type="search" id="global-search-input" placeholder="Recherche rapide..." autocomplete="off">
+                    </div>
+                    <div id="global-search-results" class="position-absolute bg-white shadow rounded w-100" style="display:none; z-index: 1050; top: 110%; max-height: 400px; overflow-y: auto;">
+                        <div class="list-group list-group-flush" id="global-search-list">
+                            <!-- Results will be injected here -->
+                        </div>
+                    </div>
+                </form>
                 
                 <ul class="navbar-nav ms-auto">
                     <li class="nav-item dropdown">
@@ -236,6 +257,62 @@
                     bsAlert.close();
                 });
             }, 5000);
+            
+            // Global Search Logic
+            const searchInput = document.getElementById('global-search-input');
+            const searchResults = document.getElementById('global-search-results');
+            const searchList = document.getElementById('global-search-list');
+            let searchTimeout = null;
+            
+            if(searchInput) {
+                searchInput.addEventListener('input', function() {
+                    const query = this.value.trim();
+                    clearTimeout(searchTimeout);
+                    
+                    if (query.length < 2) {
+                        searchResults.style.display = 'none';
+                        return;
+                    }
+                    
+                    searchTimeout = setTimeout(() => {
+                        fetch(`/api/recherche-globale/?q=${encodeURIComponent(query)}`)
+                            .then(response => response.json())
+                            .then(data => {
+                                searchList.innerHTML = '';
+                                if (data.results && data.results.length > 0) {
+                                    data.results.forEach(item => {
+                                        const a = document.createElement('a');
+                                        a.href = item.url;
+                                        a.className = 'list-group-item list-group-item-action py-2';
+                                        a.innerHTML = `
+                                            <div class="d-flex w-100 justify-content-between align-items-center">
+                                                <div>
+                                                    <i class="fas ${item.icon} text-secondary me-2"></i>
+                                                    <span class="fw-bold">${item.titre}</span>
+                                                    <br><small class="text-muted ms-4">${item.sous_titre}</small>
+                                                </div>
+                                                <span class="badge bg-light text-dark border">${item.type}</span>
+                                            </div>
+                                        `;
+                                        searchList.appendChild(a);
+                                    });
+                                    searchResults.style.display = 'block';
+                                } else {
+                                    searchList.innerHTML = '<div class="p-3 text-center text-muted">Aucun résultat trouvé</div>';
+                                    searchResults.style.display = 'block';
+                                }
+                            })
+                            .catch(error => console.error('Error fetching search results:', error));
+                    }, 300); // 300ms debounce
+                });
+                
+                // Hide results when clicking outside
+                document.addEventListener('click', function(e) {
+                    if (!searchInput.contains(e.target) && !searchResults.contains(e.target)) {
+                        searchResults.style.display = 'none';
+                    }
+                });
+            }
         });
     </script>
     

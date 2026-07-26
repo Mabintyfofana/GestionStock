@@ -132,3 +132,22 @@ def generer_qr_code_article(article):
         'categorie': article.categorie.nom if article.categorie else '',
     }
     return data
+
+def enregistrer_audit(utilisateur, action, type_element, description, request=None):
+    """Enregistre une action dans le journal d'audit"""
+    from .models import JournalAudit
+    ip_address = None
+    if request:
+        x_forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')
+        if x_forwarded_for:
+            ip_address = x_forwarded_for.split(',')[0]
+        else:
+            ip_address = request.META.get('REMOTE_ADDR')
+            
+    JournalAudit.objects.create(
+        utilisateur=utilisateur if utilisateur and utilisateur.is_authenticated else None,
+        action=action,
+        type_element=type_element,
+        description=description,
+        ip_address=ip_address
+    )

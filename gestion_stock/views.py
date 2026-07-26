@@ -270,6 +270,14 @@ def ajouter_article(request):
                 emplacement=article.emplacement or 'Défaut'
             )
             
+            enregistrer_audit(
+                request.user, 
+                'CREATE', 
+                'Article', 
+                f"Création de l'article: {article.designation} (Code: {article.code_article})",
+                request
+            )
+            
             messages.success(request, 'Article ajouté avec succès!')
             return redirect('liste_articles')
     else:
@@ -286,6 +294,15 @@ def modifier_article(request, pk):
         form = ArticleForm(request.POST, instance=article)
         if form.is_valid():
             form.save()
+            
+            enregistrer_audit(
+                request.user, 
+                'UPDATE', 
+                'Article', 
+                f"Modification de l'article: {article.designation}",
+                request
+            )
+            
             messages.success(request, 'Article modifié avec succès!')
             return redirect('detail_article', pk=article.pk)
     else:
@@ -309,7 +326,18 @@ def supprimer_article(request, pk):
     article = get_object_or_404(Article, pk=pk)
     
     if request.method == 'POST':
+        designation = article.designation
+        code = article.code_article
         article.delete()
+        
+        enregistrer_audit(
+            request.user, 
+            'DELETE', 
+            'Article', 
+            f"Suppression de l'article: {designation} (Code: {code})",
+            request
+        )
+        
         messages.success(request, 'Article supprimé avec succès!')
         return redirect('liste_articles')
     
@@ -372,6 +400,14 @@ def mouvement_stock(request):
             
             mouvement.save()
             
+            enregistrer_audit(
+                request.user, 
+                'CREATE', 
+                'Mouvement', 
+                f"Mouvement de type '{mouvement.get_type_mouvement_display()}' sur {mouvement.article.designation} (Qté: {mouvement.quantite})",
+                request
+            )
+            
             messages.success(request, 'Mouvement enregistré avec succès!')
             return redirect('historique_mouvements')
     else:
@@ -402,6 +438,14 @@ def ajuster_stock(request):
             ajustement.quantite_systeme = stock.quantite
             
             ajustement.save()
+            
+            enregistrer_audit(
+                request.user, 
+                'UPDATE', 
+                'Ajustement', 
+                f"Ajustement de stock sur {ajustement.article.designation}: {ajustement.quantite_systeme} -> {ajustement.quantite_reelle}",
+                request
+            )
             
             messages.success(request, 'Ajustement effectué avec succès!')
             return redirect('historique_mouvements')
@@ -548,6 +592,15 @@ def ajouter_commande(request):
             commande.utilisateur = request.user
             commande.numero = f"CMD-{timezone.now().strftime('%Y%m%d')}-{CommandeFournisseur.objects.count() + 1:04d}"
             commande.save()
+            
+            enregistrer_audit(
+                request.user, 
+                'CREATE', 
+                'Commande', 
+                f"Création de la commande {commande.numero} pour le fournisseur {commande.fournisseur.nom}",
+                request
+            )
+            
             messages.success(request, 'Commande créée avec succès!')
             return redirect('detail_commande', pk=commande.pk)
     else:
@@ -966,6 +1019,106 @@ def generer_bon_commande_pdf(request, pk):
     response = HttpResponse(buffer, content_type='application/pdf')
     response['Content-Disposition'] = f'attachment; filename="bon_commande_{commande.numero}.pdf"'
     return response
+
+# API pour la recherche globale
+from django.http import JsonResponse
+from django.db.models import Q
+
+@login_required
+def api_recherche_globale(request):
+    q = request.GET.get('q', '').strip()
+    if not q or len(q) < 2:
+        return JsonResponse({'results': []})
+        
+    results = []
+    
+    # 1. Recherche Articles
+    articles = Article.objects.filter(
+        Q(designation__icontains=q) | 
+        Q(code_article__icontains=q) | 
+        Q(code_barre__icontains=q)
+    ).filter(actif=True)[:5]
+    
+    for a in articles:
+        results.append({
+            'type': 'Article',
+            'id': a.id,
+            'titre': a.designation,
+            'sous_titre': f"Code: {a.code_article}",
+            'url': f"/articles/detail/{a.id}/",
+            'icon': 'fa-box'
+        })
+        
+    # 2. Recherche Fournisseurs
+    fournisseurs = Fournisseur.objects.filter(
+        Q(nom__icontains=q) | 
+        Q(code__icontains=q)
+    )[:3]
+    
+    for f in fournisseurs:
+        results.append({
+            'type': 'Fournisseur',
+            'id': f.id,
+            'titre': f.nom,
+            'sous_titre': f"Code: {f.code}",
+            'url': f"/fournisseurs/modifier/{f.id}/", # Assuming modifier is used as detail
+            'icon': 'fa-truck'
+        })
+        
+    # 3. Recherche Commandes
+    commandes = CommandeFournisseur.objects.filter(
+        Q(numero__icontains=q)
+    )[:3]
+    
+    for c in commandes:
+        results.append({
+            'type': 'Commande',
+            'id': c.id,
+            'titre': c.numero,
+            'sous_titre': f"Fournisseur: {c.fournisseur.nom}",
+            'url': f"/commandes/detail/{c.id}/",
+            'icon': 'fa-file-invoice'
+        })
+        
+    return JsonResponse({'results': results})
+
+# --- Audit ---
+@login_required
+@gestionnaire_required
+def journal_audit(request):
+    journaux = JournalAudit.objects.select_related('utilisateur').all()
+    
+    # Filtrage
+    action = request.GET.get('action')
+    type_element = request.GET.get('type_element')
+    date_debut = request.GET.get('date_debut')
+    date_fin = request.GET.get('date_fin')
+    
+    if action:
+        journaux = journaux.filter(action=action)
+    if type_element:
+        journaux = journaux.filter(type_element__icontains=type_element)
+    if date_debut:
+        journaux = journaux.filter(date_action__date__gte=date_debut)
+    if date_fin:
+        journaux = journaux.filter(date_action__date__lte=date_fin)
+        
+    # Pagination
+    paginator = Paginator(journaux, 50)
+    page = request.GET.get('page')
+    
+    try:
+        journaux = paginator.page(page)
+    except PageNotAnInteger:
+        journaux = paginator.page(1)
+    except EmptyPage:
+        journaux = paginator.page(paginator.num_pages)
+        
+    context = {
+        'journaux': journaux,
+        'action_choices': JournalAudit.ACTION_CHOICES,
+    }
+    return render(request, 'gestion_stock/audit/journal.html', context)
 
 # API pour le scan de code-barres
 @login_required

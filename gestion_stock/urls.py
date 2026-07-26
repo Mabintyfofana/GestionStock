@@ -54,7 +54,11 @@ urlpatterns = [
     path('reporting/articles-vendus/', login_required(gestionnaire_required(views.articles_vendus)), name='articles_vendus'),
     path('reporting/generer-pdf/', login_required(gestionnaire_required(views.generer_etat_stock_pdf)), name='generer_etat_stock_pdf'),
     
+    # Audit
+    path('audit/', login_required(gestionnaire_required(views.journal_audit)), name='journal_audit'),
+    
     # API
+    path('api/recherche-globale/', login_required(views.api_recherche_globale), name='api_recherche_globale'),
     path('api/article/<str:code_barre>/', login_required(views.api_recherche_article), name='api_recherche_article'),
     path('api/stock-actuel/', login_required(views.api_stock_actuel), name='api_stock_actuel'),
     

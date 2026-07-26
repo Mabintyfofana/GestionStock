@@ -262,3 +262,27 @@ class LigneCommande(models.Model):
     class Meta:
         verbose_name = "Ligne de commande"
         verbose_name_plural = "Lignes de commande"
+
+class JournalAudit(models.Model):
+    ACTION_CHOICES = [
+        ('CREATE', 'Création'),
+        ('UPDATE', 'Modification'),
+        ('DELETE', 'Suppression'),
+        ('OTHER', 'Autre'),
+    ]
+
+    utilisateur = models.ForeignKey(User, on_delete=models.SET_NULL, null=True)
+    action = models.CharField(max_length=10, choices=ACTION_CHOICES)
+    type_element = models.CharField(max_length=50)
+    description = models.TextField()
+    date_action = models.DateTimeField(auto_now_add=True)
+    ip_address = models.GenericIPAddressField(null=True, blank=True)
+
+    class Meta:
+        verbose_name = "Journal d'audit"
+        verbose_name_plural = "Journaux d'audit"
+        ordering = ['-date_action']
+
+    def __str__(self):
+        user_name = self.utilisateur.username if self.utilisateur else "Système"
+        return f"{self.date_action.strftime('%d/%m/%Y %H:%M')} - {user_name} - {self.action} sur {self.type_element}"

@@ -1,0 +1,127 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Journal d'Audit{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1 class="h3 mb-0">
+        <i class="fas fa-history me-2"></i>Journal d'Audit
+    </h1>
+</div>
+
+<div class="card shadow-sm mb-4">
+    <div class="card-body bg-light">
+        <form method="get" class="row g-3">
+            <div class="col-md-3">
+                <label class="form-label">Action</label>
+                <select name="action" class="form-select">
+                    <option value="">Toutes les actions</option>
+                    {% for code, nom in action_choices %}
+                    <option value="{{ code }}" {% if request.GET.action == code %}selected{% endif %}>{{ nom }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">Type (ex: Article, Commande)</label>
+                <input type="text" name="type_element" class="form-control" value="{{ request.GET.type_element }}">
+            </div>
+            <div class="col-md-2">
+                <label class="form-label">Date Début</label>
+                <input type="date" name="date_debut" class="form-control" value="{{ request.GET.date_debut }}">
+            </div>
+            <div class="col-md-2">
+                <label class="form-label">Date Fin</label>
+                <input type="date" name="date_fin" class="form-control" value="{{ request.GET.date_fin }}">
+            </div>
+            <div class="col-md-2 d-flex align-items-end">
+                <button type="submit" class="btn btn-primary w-100">
+                    <i class="fas fa-filter me-2"></i>Filtrer
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div class="card shadow-sm">
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th>Date & Heure</th>
+                        <th>Utilisateur</th>
+                        <th>Action</th>
+                        <th>Type d'Élément</th>
+                        <th>Description détaillée</th>
+                        <th>Adresse IP</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for log in journaux %}
+                    <tr>
+                        <td class="align-middle text-nowrap">
+                            <small>{{ log.date_action|date:"d/m/Y H:i:s" }}</small>
+                        </td>
+                        <td class="align-middle fw-bold">
+                            {% if log.utilisateur %}
+                                {{ log.utilisateur.username }}
+                            {% else %}
+                                <span class="text-muted">Système</span>
+                            {% endif %}
+                        </td>
+                        <td class="align-middle">
+                            {% if log.action == 'CREATE' %}
+                                <span class="badge bg-success">Création</span>
+                            {% elif log.action == 'UPDATE' %}
+                                <span class="badge bg-warning text-dark">Modification</span>
+                            {% elif log.action == 'DELETE' %}
+                                <span class="badge bg-danger">Suppression</span>
+                            {% else %}
+                                <span class="badge bg-secondary">{{ log.action }}</span>
+                            {% endif %}
+                        </td>
+                        <td class="align-middle">{{ log.type_element }}</td>
+                        <td class="align-middle">{{ log.description }}</td>
+                        <td class="align-middle text-muted"><small>{{ log.ip_address|default:"N/A" }}</small></td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="6" class="text-center py-5 text-muted">
+                            <i class="fas fa-search-minus fa-3x mb-3 d-block"></i>
+                            Aucun enregistrement trouvé dans le journal d'audit.
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    
+    {% if journaux.has_other_pages %}
+    <div class="card-footer bg-white border-top">
+        <nav aria-label="Pagination">
+            <ul class="pagination justify-content-center mb-0">
+                {% if journaux.has_previous %}
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ journaux.previous_page_number }}{% if request.GET.action %}&action={{ request.GET.action }}{% endif %}{% if request.GET.type_element %}&type_element={{ request.GET.type_element }}{% endif %}"><i class="fas fa-chevron-left"></i></a>
+                </li>
+                {% else %}
+                <li class="page-item disabled"><a class="page-link" href="#"><i class="fas fa-chevron-left"></i></a></li>
+                {% endif %}
+                
+                <li class="page-item active"><a class="page-link" href="#">Page {{ journaux.number }} sur {{ journaux.paginator.num_pages }}</a></li>
+                
+                {% if journaux.has_next %}
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ journaux.next_page_number }}{% if request.GET.action %}&action={{ request.GET.action }}{% endif %}{% if request.GET.type_element %}&type_element={{ request.GET.type_element }}{% endif %}"><i class="fas fa-chevron-right"></i></a>
+                </li>
+                {% else %}
+                <li class="page-item disabled"><a class="page-link" href="#"><i class="fas fa-chevron-right"></i></a></li>
+                {% endif %}
+            </ul>
+        </nav>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
